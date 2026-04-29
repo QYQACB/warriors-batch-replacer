@@ -1,0 +1,40 @@
+
+name: 运行猫武士维基替换机器人
+
+on:
+  workflow_dispatch: # 允许手动触发
+  schedule:
+    - cron: '0 6 * * 7' # 每周日 UTC 6:00 运行
+
+jobs:
+  bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+
+      - name: 设置 Python 环境
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip' # 启用 pip 缓存以加速安装
+
+      - name: 安装依赖
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests
+
+      - name: 执行替换任务
+        env:
+          WIKI_USERNAME: ${{ secrets.WIKI_USERNAME }}
+          WIKI_PASSWORD: ${{ secrets.WIKI_PASSWORD }}
+        run: |
+          echo "开始执行替换脚本..."
+          python3 replacer.py
+          echo "替换脚本执行完毕。"
+
+      - name: 任务失败通知
+        if: failure()
+        run: |
+          echo "::error::维基替换机器人执行失败，请检查日志。"
+          # 此处可集成钉钉/飞书/Webhook 通知
